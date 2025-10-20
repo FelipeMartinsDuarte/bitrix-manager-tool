@@ -28,8 +28,6 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
 
   console.log(`[Bitrix API Call] ➡️ ${method}`);
-  console.log('URL:', url);
-  console.log('Params:', params);
   
   const response = await fetch(url, {
     method: 'POST',
@@ -72,12 +70,14 @@ export const BitrixService = {
     };
     
     const mappedTypes = data.result.types.map((type: any) => ({
-      id: `${type.entityTypeId}-${type.id}`, 
-      title: type.name,
+      id: type.id.toString(), // Use the 'id' field which is unique per type
+      title: type.title,
       entityTypeId: type.entityTypeId,
-      created: new Date().toISOString(), 
+      created: type.createdTime, 
     }));
+
+    console.log('[Bitrix Service] Mapped CRM Entities:', mappedTypes);
     
-    return [];
+    return mappedTypes;
   },
 };
