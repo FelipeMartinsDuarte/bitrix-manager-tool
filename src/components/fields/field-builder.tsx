@@ -37,6 +37,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { MultiSelect } from '../ui/multi-select';
+import { BitrixService } from '@/lib/bitrix-service';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const fieldTypes: { value: CrmFieldType, label: string }[] = [
   { value: 'string', label: 'Texto (string)' },
@@ -44,13 +46,28 @@ const fieldTypes: { value: CrmFieldType, label: string }[] = [
   { value: 'datetime', label: 'Data/Hora (datetime)' },
   { value: 'boolean', label: 'Sim/Não (boolean)' },
   { value: 'crm_status', label: 'Lista (crm_status)' },
+  { value: 'enumeration', label: 'Lista (enumeration)'},
+  { value: 'user', label: 'Usuário (user)'},
+  { value: 'file', label: 'Arquivo (file)'}
 ];
+
+type PayloadPreview = {
+  entityTypeId: number,
+  field: {
+    USER_TYPE_ID: CrmFieldType;
+    FIELD_NAME: string;
+    EDIT_FORM_LABEL: string;
+    LIST_COLUMN_LABEL: string;
+    MULTIPLE: 'Y' | 'N';
+    SETTINGS?: Record<string, any>;
+  }
+}
 
 const formSchema = z.object({
   crmIds: z.array(z.string()).min(1, "Selecione pelo menos um CRM de destino."),
   listLabel: z.string().min(3, "O rótulo deve ter pelo menos 3 caracteres."),
   fieldNamePrefix: z.string(),
-  type: z.enum(['string', 'double', 'datetime', 'boolean', 'crm_status']),
+  type: z.enum(['string', 'double', 'datetime', 'boolean', 'crm_status', 'enumeration', 'user', 'file']),
   isMultiple: z.boolean().default(false),
 });
 
@@ -59,7 +76,7 @@ type FieldBuilderProps = {
 }
 
 export function FieldBuilder({ crms }: FieldBuilderProps) {
-  const [payload, setPayload] = useState<object[]>([]);
+  const [payloads, setPayloads] = useState<PayloadPreview[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,7 +84,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     defaultValues: {
       crmIds: [],
       listLabel: '',
-      fieldNamePrefix: '',
+      fieldNamePrefix: 'UF_CRM_{ID}_',
       type: 'string',
       isMultiple: false,
     },
@@ -87,53 +104,86 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
         .toUpperCase();
       setValue('fieldNamePrefix', `UF_CRM_{ID}_${formattedName}`);
     } else {
-      setValue('fieldNamePrefix', '');
+       setValue('fieldNamePrefix', 'UF_CRM_{ID}_');
     }
   }, [watchedListLabel, setValue]);
 
   const watchedValues = watch();
   useEffect(() => {
     const subscription = watch((value) => {
-      const { crmIds = [], ...rest } = value;
+      const { crmIds = [], listLabel, fieldNamePrefix, isMultiple, type } = value;
       const selectedCrms = crms.filter(c => crmIds.includes(c.id));
 
-      const payloadPreviews = selectedCrms.map(crm => {
-        const fieldName = rest.fieldNamePrefix.replace('{ID}', crm.entityTypeId.toString());
-        const fieldData = {
-          ...rest,
-          USER_TYPE_ID: rest.type,
-          XML_ID: fieldName,
-          EDIT_FORM_LABEL: rest.listLabel,
-          LIST_COLUMN_LABEL: rest.listLabel,
-          fieldName: fieldName // just for display
-        };
-        // @ts-ignore
-        delete fieldData.type;
-        // @ts-ignore
-        delete fieldData.crmIds;
-        // @ts-ignore
-        delete fieldData.fieldNamePrefix;
+      if (!listLabel || !fieldNamePrefix || !type) {
+        setPayloads([]);
+        return;
+      }
 
+      const payloadPreviews = selectedCrms.map(crm => {
+        const crmSpecificFieldName = fieldNamePrefix.replace('{ID}', crm.entityTypeId.toString());
+        
         return {
           entityTypeId: crm.entityTypeId,
-          field: fieldData
+          field: {
+            FIELD_NAME: crmSpecificFieldName,
+            EDIT_FORM_LABEL: listLabel,
+            LIST_COLUMN_LABEL: listLabel,
+            USER_TYPE_ID: type,
+            MULTIPLE: isMultiple ? 'Y' : 'N',
+          }
         };
       });
-
-      setPayload(payloadPreviews);
+      // @ts-ignore
+      setPayloads(payloadPreviews);
     });
     return () => subscription.unsubscribe();
   }, [watch, crms, watchedCrmIds]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Simulando chamada de API para criar campo...");
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log("Payloads simulados:", payload);
-    toast({
-      title: "Campos criados com sucesso! (Simulação)",
-      description: `O campo "${values.listLabel}" foi enviado para ${values.crmIds.length} CRMs.`
-    })
+      if (payloads.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "Nenhuma ação a ser executada",
+            description: "Preencha o formulário e selecione os CRMs de destino.",
+        });
+        return;
+    }
+
+    const results = await Promise.allSettled(
+        payloads.map(p => BitrixService.createField(p.entityTypeId, p.field))
+    );
+
+    const successes = results.filter(r => r.status === 'fulfilled').length;
+    const failures = results.filter(r => r.status === 'rejected').length;
+
+    if (successes > 0) {
+        toast({
+            title: "Operação Concluída!",
+            description: `${successes} campo(s) criado(s) com sucesso.`,
+        });
+    }
+
+    if (failures > 0) {
+         const failedCrms = results
+            .map((r, index) => (r.status === 'rejected' ? crms.find(c=> c.id === values.crmIds[index])?.title : null))
+            .filter(Boolean)
+            .join(', ');
+
+        toast({
+            variant: "destructive",
+            title: `Falha ao criar ${failures} campo(s)`,
+            description: `Erro nos CRMs: ${failedCrms}. Verifique o console para detalhes.`,
+        });
+        
+         results.forEach(r => {
+            if (r.status === 'rejected') {
+                console.error("Falha ao criar campo:", r.reason);
+            }
+        })
+    }
+
+     form.reset();
   }
   
   const crmOptions = useMemo(() => crms.map(crm => ({ value: crm.id, label: crm.title })), [crms]);
@@ -156,7 +206,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>CRMs de Destino</FormLabel>
-                    <MultiSelect
+                     <MultiSelect
                       options={crmOptions}
                       selected={field.value}
                       onChange={field.onChange}
@@ -242,20 +292,22 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
                   </FormItem>
                 )}
               />
-              <div>
-                <FormLabel>Pré-visualização do Payload</FormLabel>
-                <pre className="mt-2 w-full max-h-60 overflow-y-auto rounded-md bg-secondary p-4 font-code text-sm text-secondary-foreground">
-                  <code>
-                    {JSON.stringify(payload, null, 2)}
-                  </code>
-                </pre>
-              </div>
+                {payloads.length > 0 && (
+                <div>
+                  <FormLabel>Pré-visualização do Payload</FormLabel>
+                  <pre className="mt-2 w-full max-h-60 overflow-y-auto rounded-md bg-secondary p-4 font-code text-sm text-secondary-foreground">
+                    <code>
+                      {JSON.stringify(payloads, null, 2)}
+                    </code>
+                  </pre>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || payloads.length === 0}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-              Criar Campo
+              Criar Campo(s)
             </Button>
           </CardFooter>
         </form>
@@ -263,3 +315,5 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     </Card>
   );
 }
+
+    

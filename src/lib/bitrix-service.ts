@@ -5,6 +5,7 @@ import type { BitrixApiConfig, CrmEntity, CrmField } from './types';
 
 function getBitrixConfig(): BitrixApiConfig {
   if (typeof window === 'undefined') {
+    // Retornar uma configuração vazia ou padrão para o lado do servidor
     return { baseUrl: '', userId: '', apiToken: '' };
   }
   const configStr = localStorage.getItem('bitrixConfig');
@@ -21,6 +22,7 @@ function getBitrixConfig(): BitrixApiConfig {
 async function fetchFromBitrix(method: string, params: Record<string, any> = {}) {
   const config = getBitrixConfig();
   if (!config.baseUrl) {
+    // Isso evita que a chamada de API seja feita no lado do servidor ou se não houver config
     throw new Error("Configurações do Bitrix não encontradas.");
   }
   
@@ -58,8 +60,11 @@ export const BitrixService = {
         return [];
     };
     
+    // Log do dado bruto
+    console.log('crm.type.list raw types:', data.result.types);
+    
     const mappedTypes = data.result.types.map((type: any) => ({
-      id: `T${type.entityTypeId}_${type.id}`,
+      id: type.id, // Usando o 'id' do type que parece ser o 'T...'.
       title: type.title,
       entityTypeId: type.entityTypeId,
       created: type.createdTime || new Date().toISOString(), 
@@ -91,9 +96,19 @@ export const BitrixService = {
       listLabel: field.listLabel || field.editFormLabel || field.fieldName,
       type: field.userTypeId,
       isMultiple: field.multiple === 'Y',
-      isPublic: true, 
+      isPublic: true, // Assumindo como público por padrão
     }));
 
     return mappedFields;
+  },
+  
+  async createField(entityTypeId: number, field: any): Promise<any> {
+    const data = await fetchFromBitrix('crm.userfield.add', {
+      entityTypeId: entityTypeId,
+      field: field,
+    });
+    return data.result;
   }
 };
+
+    
