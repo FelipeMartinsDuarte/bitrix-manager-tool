@@ -87,7 +87,7 @@ export default function SettingsPage() {
                   <FormItem>
                     <FormLabel>ID do Usuário (do webhook)</FormLabel>
                     <FormControl>
-                      <Input placeholder="1036" {...field} />
+                      <Input placeholder="Seu ID de usuário do webhook" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
