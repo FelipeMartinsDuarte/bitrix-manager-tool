@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -17,7 +18,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { CrmEntity } from "@/lib/types";
 
-export function EditCrmDialog({ children, crm }: { children: ReactNode; crm: CrmEntity }) {
+export function EditCrmDialog({
+  children,
+  crm,
+  onUpdate,
+}: {
+  children: ReactNode;
+  crm: CrmEntity;
+  onUpdate: (crm: CrmEntity) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -27,19 +36,21 @@ export function EditCrmDialog({ children, crm }: { children: ReactNode; crm: Crm
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const title = formData.get("title");
-    const entityTypeId = formData.get("entityTypeId");
+    const title = formData.get("title") as string;
+    const entityTypeId = Number(formData.get("entityTypeId"));
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    console.log({ id: crm.id, title, entityTypeId });
-    
+    const updatedCrm = { ...crm, title, entityTypeId };
+    console.log({ updatedCrm });
+    onUpdate(updatedCrm);
+
     toast({
       title: "CRM Atualizado com Sucesso!",
       description: `O CRM "${title}" foi atualizado.`,
     });
-    
+
     setIsSubmitting(false);
     setOpen(false);
   };
@@ -79,14 +90,21 @@ export function EditCrmDialog({ children, crm }: { children: ReactNode; crm: Crm
                 defaultValue={crm.entityTypeId}
                 className="col-span-3"
                 required
-                disabled
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Salvar Alterações
             </Button>
           </DialogFooter>

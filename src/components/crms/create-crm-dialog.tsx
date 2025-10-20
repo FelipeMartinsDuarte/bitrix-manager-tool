@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -15,8 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import type { CrmEntity } from "@/lib/types";
 
-export function CreateCrmDialog({ children }: { children: ReactNode }) {
+export function CreateCrmDialog({
+  children,
+  onCreate,
+}: {
+  children: ReactNode;
+  onCreate: (crm: CrmEntity) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -26,21 +34,30 @@ export function CreateCrmDialog({ children }: { children: ReactNode }) {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const title = formData.get("title");
-    const entityTypeId = formData.get("entityTypeId");
+    const title = formData.get("title") as string;
+    const entityTypeId = Number(formData.get("entityTypeId"));
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    console.log({ title, entityTypeId });
-    
+    const newCrm: CrmEntity = {
+      id: `crm-${Date.now()}`,
+      title,
+      entityTypeId,
+      created: new Date().toISOString(),
+    };
+
+    console.log({ newCrm });
+    onCreate(newCrm);
+
     toast({
       title: "CRM Criado com Sucesso!",
       description: `O CRM "${title}" foi adicionado.`,
     });
-    
+
     setIsSubmitting(false);
     setOpen(false);
+    event.currentTarget.reset();
   };
 
   return (
@@ -82,9 +99,17 @@ export function CreateCrmDialog({ children }: { children: ReactNode }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Criar CRM
             </Button>
           </DialogFooter>

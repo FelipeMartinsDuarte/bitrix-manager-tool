@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -12,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -20,9 +20,15 @@ type DeleteCrmAlertProps = {
   children: ReactNode;
   crmId: string;
   crmTitle: string;
+  onDelete: (crmId: string) => void;
 };
 
-export function DeleteCrmAlert({ children, crmId, crmTitle }: DeleteCrmAlertProps) {
+export function DeleteCrmAlert({
+  children,
+  crmId,
+  crmTitle,
+  onDelete,
+}: DeleteCrmAlertProps) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -31,14 +37,15 @@ export function DeleteCrmAlert({ children, crmId, crmTitle }: DeleteCrmAlertProp
     setIsDeleting(true);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     console.log(`Deleting CRM with ID: ${crmId}`);
-    
+
+    onDelete(crmId);
+
     toast({
       title: "CRM Deletado com Sucesso!",
       description: `O CRM "${crmTitle}" foi removido.`,
-      variant: "destructive"
+      variant: "destructive",
     });
 
     setIsDeleting(false);
@@ -52,7 +59,8 @@ export function DeleteCrmAlert({ children, crmId, crmTitle }: DeleteCrmAlertProp
         <AlertDialogHeader>
           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
           <AlertDialogDescription>
-            Essa ação não pode ser desfeita. Isso irá deletar permanentemente o CRM
+            Essa ação não pode ser desfeita. Isso irá deletar permanentemente o
+            CRM
             <strong className="mx-1">"{crmTitle}"</strong>
             dos servidores do Bitrix24.
           </AlertDialogDescription>

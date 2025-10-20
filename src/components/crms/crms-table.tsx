@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -26,25 +27,28 @@ import { DeleteCrmAlert } from "./delete-crm-alert";
 
 type CrmsTableProps = {
   data: CrmEntity[];
+  onUpdate: (crm: CrmEntity) => void;
+  onDelete: (crmId: string) => void;
 };
 
 function FormattedDate({ dateString }: { dateString: string }) {
-    const [formattedDate, setFormattedDate] = React.useState('');
+  const [formattedDate, setFormattedDate] = React.useState("");
 
-    React.useEffect(() => {
-        // Ensure this runs only on the client
-        setFormattedDate(new Date(dateString).toLocaleDateString(navigator.language, {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        }));
-    }, [dateString]);
+  React.useEffect(() => {
+    // Ensure this runs only on the client
+    setFormattedDate(
+      new Date(dateString).toLocaleDateString(navigator.language, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    );
+  }, [dateString]);
 
-    return <>{formattedDate}</>;
+  return <>{formattedDate}</>;
 }
 
-
-export default function CrmsTable({ data }: CrmsTableProps) {
+export default function CrmsTable({ data, onUpdate, onDelete }: CrmsTableProps) {
   return (
     <Card>
       <CardHeader>
@@ -55,7 +59,9 @@ export default function CrmsTable({ data }: CrmsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Título</TableHead>
-              <TableHead className="hidden md:table-cell">ID da Entidade</TableHead>
+              <TableHead className="hidden md:table-cell">
+                ID da Entidade
+              </TableHead>
               <TableHead className="hidden md:table-cell">Criado em</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
@@ -82,14 +88,21 @@ export default function CrmsTable({ data }: CrmsTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <EditCrmDialog crm={crm}>
+                      <EditCrmDialog crm={crm} onUpdate={onUpdate}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
                       </EditCrmDialog>
-                       <DeleteCrmAlert crmId={crm.id} crmTitle={crm.title}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                      <DeleteCrmAlert
+                        crmId={crm.id}
+                        crmTitle={crm.title}
+                        onDelete={onDelete}
+                      >
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Deletar
                         </DropdownMenuItem>
