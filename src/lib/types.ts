@@ -1,6 +1,5 @@
 export type CrmEntity = {
-  id: string; // Internal ID for mock data, will be 'ID' from API
-  ID?: string; // ID from Bitrix24 API
+  id: string; // This is the 'ID' from Bitrix API
   entityTypeId: number;
   title: string;
   created: string; // Keep as string for mock data compatibility
