@@ -36,6 +36,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle } from 'lucide-react';
+import { MultiSelect } from '../ui/multi-select';
 
 const fieldTypes: { value: CrmFieldType, label: string }[] = [
   { value: 'string', label: 'Texto (string)' },
@@ -46,9 +47,9 @@ const fieldTypes: { value: CrmFieldType, label: string }[] = [
 ];
 
 const formSchema = z.object({
-  crmId: z.string().min(1, "Selecione um CRM de destino."),
+  crmIds: z.array(z.string()).min(1, "Selecione pelo menos um CRM de destino."),
   listLabel: z.string().min(3, "O rótulo deve ter pelo menos 3 caracteres."),
-  fieldName: z.string(),
+  fieldNamePrefix: z.string(),
   type: z.enum(['string', 'double', 'datetime', 'boolean', 'crm_status']),
   isMultiple: z.boolean().default(false),
 });
@@ -58,75 +59,84 @@ type FieldBuilderProps = {
 }
 
 export function FieldBuilder({ crms }: FieldBuilderProps) {
-  const [payload, setPayload] = useState({});
+  const [payload, setPayload] = useState<object[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      crmId: '',
+      crmIds: [],
       listLabel: '',
-      fieldName: '',
+      fieldNamePrefix: '',
       type: 'string',
       isMultiple: false,
     },
   });
 
   const { watch, setValue, formState: { isSubmitting } } = form;
-  const watchedCrmId = watch('crmId');
   const watchedListLabel = watch('listLabel');
-
-  const selectedCrm = useMemo(() => {
-    return crms.find(c => c.id === watchedCrmId);
-  }, [crms, watchedCrmId]);
+  const watchedCrmIds = watch('crmIds');
 
   useEffect(() => {
-    if (selectedCrm && watchedListLabel) {
+    if (watchedListLabel) {
       const formattedName = watchedListLabel
         .trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
         .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
         .replace(/\s+/g, '_')
         .toUpperCase();
-      setValue('fieldName', `UF_CRM_${selectedCrm.entityTypeId}_${formattedName}`);
+      setValue('fieldNamePrefix', `UF_CRM_{ID}_${formattedName}`);
     } else {
-        setValue('fieldName', '');
+      setValue('fieldNamePrefix', '');
     }
-  }, [selectedCrm, watchedListLabel, setValue]);
-  
+  }, [watchedListLabel, setValue]);
+
   const watchedValues = watch();
   useEffect(() => {
-      const subscription = watch((value) => {
-        const { crmId, ...rest } = value;
-        const crm = crms.find(c => c.id === crmId);
-        const payloadPreview = {
-          entityTypeId: crm?.entityTypeId,
-          field: {
-            ...rest,
-            USER_TYPE_ID: rest.type,
-            XML_ID: rest.fieldName,
-            EDIT_FORM_LABEL: rest.listLabel,
-            LIST_COLUMN_LABEL: rest.listLabel
-          }
+    const subscription = watch((value) => {
+      const { crmIds = [], ...rest } = value;
+      const selectedCrms = crms.filter(c => crmIds.includes(c.id));
+
+      const payloadPreviews = selectedCrms.map(crm => {
+        const fieldName = rest.fieldNamePrefix.replace('{ID}', crm.entityTypeId.toString());
+        const fieldData = {
+          ...rest,
+          USER_TYPE_ID: rest.type,
+          XML_ID: fieldName,
+          EDIT_FORM_LABEL: rest.listLabel,
+          LIST_COLUMN_LABEL: rest.listLabel,
+          fieldName: fieldName // just for display
         };
         // @ts-ignore
-        delete payloadPreview.field.type;
+        delete fieldData.type;
         // @ts-ignore
-        delete payloadPreview.field.crmId;
-        setPayload(payloadPreview);
+        delete fieldData.crmIds;
+        // @ts-ignore
+        delete fieldData.fieldNamePrefix;
+
+        return {
+          entityTypeId: crm.entityTypeId,
+          field: fieldData
+        };
       });
-      return () => subscription.unsubscribe();
-  }, [watch, crms]);
+
+      setPayload(payloadPreviews);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, crms, watchedCrmIds]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Simulando chamada de API para criar campo...");
     await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log("Payload simulado:", payload);
+    console.log("Payloads simulados:", payload);
     toast({
-        title: "Campo criado com sucesso! (Simulação)",
-        description: `O campo "${values.listLabel}" foi enviado para o Bitrix.`
+      title: "Campos criados com sucesso! (Simulação)",
+      description: `O campo "${values.listLabel}" foi enviado para ${values.crmIds.length} CRMs.`
     })
   }
+  
+  const crmOptions = useMemo(() => crms.map(crm => ({ value: crm.id, label: crm.title })), [crms]);
 
   return (
     <Card>
@@ -135,35 +145,27 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
           <CardHeader>
             <CardTitle>Novo Campo Personalizado</CardTitle>
             <CardDescription>
-              Crie um novo campo para ser usado em um Smart Process.
+              Crie um novo campo para ser usado em um ou mais Smart Processes.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2">
             <div className="grid gap-6">
-                <FormField
+              <FormField
                 control={form.control}
-                name="crmId"
+                name="crmIds"
                 render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>CRM de Destino</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione um CRM" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {crms.map((crm) => (
-                            <SelectItem key={crm.id} value={crm.id}>
-                            {crm.title}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
+                  <FormItem>
+                    <FormLabel>CRMs de Destino</FormLabel>
+                    <MultiSelect
+                      options={crmOptions}
+                      selected={field.value}
+                      onChange={field.onChange}
+                      placeholder="Selecione um ou mais CRMs"
+                    />
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
               <FormField
                 control={form.control}
                 name="listLabel"
@@ -180,14 +182,14 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
               />
               <FormField
                 control={form.control}
-                name="fieldName"
+                name="fieldNamePrefix"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome do Campo (API)</FormLabel>
                     <FormControl>
                       <Input disabled {...field} className="font-code" />
                     </FormControl>
-                    <FormDescription>Gerado automaticamente. Padrão: UF_CRM_&#123;num&#125;_&#123;NOME&#125;</FormDescription>
+                    <FormDescription>Gerado automaticamente. O &#123;ID&#125; será substituído para cada CRM.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -200,25 +202,25 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Campo</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
+                          <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                         {fieldTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
+                          <SelectItem key={type.value} value={type.value}>
                             {type.label}
-                            </SelectItem>
+                          </SelectItem>
                         ))}
-                        </SelectContent>
+                      </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="isMultiple"
                 render={({ field }) => (
@@ -242,10 +244,10 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
               />
               <div>
                 <FormLabel>Pré-visualização do Payload</FormLabel>
-                <pre className="mt-2 w-full rounded-md bg-secondary p-4 font-code text-sm text-secondary-foreground overflow-x-auto">
-                    <code>
-                        {JSON.stringify(payload, null, 2)}
-                    </code>
+                <pre className="mt-2 w-full max-h-60 overflow-y-auto rounded-md bg-secondary p-4 font-code text-sm text-secondary-foreground">
+                  <code>
+                    {JSON.stringify(payload, null, 2)}
+                  </code>
                 </pre>
               </div>
             </div>
