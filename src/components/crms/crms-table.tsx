@@ -18,17 +18,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Edit } from "lucide-react";
+import { MoreHorizontal, Edit } from "lucide-react";
 import type { CrmEntity } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { EditCrmDialog } from "./edit-crm-dialog";
-import { DeleteCrmAlert } from "./delete-crm-alert";
 
 type CrmsTableProps = {
   data: CrmEntity[];
   onUpdate: (crm: CrmEntity) => void;
-  onDelete: (crmId: string) => void;
 };
 
 function FormattedDate({ dateString }: { dateString: string }) {
@@ -36,19 +34,21 @@ function FormattedDate({ dateString }: { dateString: string }) {
 
   React.useEffect(() => {
     // Ensure this runs only on the client
-    setFormattedDate(
-      new Date(dateString).toLocaleDateString(navigator.language, {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    );
+    if (dateString) {
+      setFormattedDate(
+        new Date(dateString).toLocaleDateString(navigator.language, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+      );
+    }
   }, [dateString]);
 
   return <>{formattedDate}</>;
 }
 
-export default function CrmsTable({ data, onUpdate, onDelete }: CrmsTableProps) {
+export default function CrmsTable({ data, onUpdate }: CrmsTableProps) {
   return (
     <Card>
       <CardHeader>
@@ -94,19 +94,6 @@ export default function CrmsTable({ data, onUpdate, onDelete }: CrmsTableProps) 
                           Editar
                         </DropdownMenuItem>
                       </EditCrmDialog>
-                      <DeleteCrmAlert
-                        crmId={crm.id}
-                        crmTitle={crm.title}
-                        onDelete={onDelete}
-                      >
-                        <DropdownMenuItem
-                          onSelect={(e) => e.preventDefault()}
-                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Deletar
-                        </DropdownMenuItem>
-                      </DeleteCrmAlert>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

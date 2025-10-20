@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit } from 'lucide-react';
 import type { CrmEntity } from '@/lib/types';
 
 type FieldsListProps = {
@@ -105,9 +105,6 @@ export function FieldsList({ crms }: FieldsListProps) {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Edit className="mr-2 h-4 w-4" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" /> Deletar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

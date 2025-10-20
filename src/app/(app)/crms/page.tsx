@@ -51,10 +51,6 @@ export default function CrmsPage() {
     );
   };
 
-  const handleDeleteCrm = (crmId: string) => {
-    setCrms((prevCrms) => prevCrms.filter((crm) => crm.id !== crmId));
-  };
-
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -91,7 +87,6 @@ export default function CrmsPage() {
       <CrmsTable
         data={crms}
         onUpdate={handleUpdateCrm}
-        onDelete={handleDeleteCrm}
       />
     );
   };
