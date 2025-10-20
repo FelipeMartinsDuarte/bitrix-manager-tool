@@ -39,16 +39,17 @@ export function EditCrmDialog({
     const title = formData.get("title") as string;
     const entityTypeId = Number(formData.get("entityTypeId"));
 
+    console.log("Simulando chamada de API para editar CRM...");
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const updatedCrm = { ...crm, title, entityTypeId };
-    console.log({ updatedCrm });
+    console.log("Payload simulado:", { updatedCrm });
     onUpdate(updatedCrm);
 
     toast({
       title: "CRM Atualizado com Sucesso!",
-      description: `O CRM "${title}" foi atualizado.`,
+      description: `O CRM "${title}" foi atualizado (simulação).`,
     });
 
     setIsSubmitting(false);

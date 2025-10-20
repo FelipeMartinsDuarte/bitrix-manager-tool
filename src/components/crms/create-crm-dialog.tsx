@@ -37,6 +37,7 @@ export function CreateCrmDialog({
     const title = formData.get("title") as string;
     const entityTypeId = Number(formData.get("entityTypeId"));
 
+    console.log("Simulando chamada de API para criar CRM...");
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -47,12 +48,12 @@ export function CreateCrmDialog({
       created: new Date().toISOString(),
     };
 
-    console.log({ newCrm });
+    console.log("Payload simulado:", { newCrm });
     onCreate(newCrm);
 
     toast({
       title: "CRM Criado com Sucesso!",
-      description: `O CRM "${title}" foi adicionado.`,
+      description: `O CRM "${title}" foi adicionado (simulação).`,
     });
 
     setIsSubmitting(false);

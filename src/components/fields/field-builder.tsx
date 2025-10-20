@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -110,11 +111,12 @@ export function FieldBuilder() {
   }, [watch]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("Simulando chamada de API para criar campo...");
     await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log(payload);
+    console.log("Payload simulado:", payload);
     toast({
         title: "Campo criado com sucesso!",
-        description: `O campo "${values.listLabel}" foi enviado para o Bitrix.`
+        description: `O campo "${values.listLabel}" foi enviado para o Bitrix (simulação).`
     })
   }
 
