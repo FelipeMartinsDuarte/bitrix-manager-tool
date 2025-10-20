@@ -21,13 +21,13 @@ function getBitrixConfig(): BitrixApiConfig | null {
 async function fetchFromBitrix(method: string, params: Record<string, any> = {}) {
   const config = getBitrixConfig();
   if (!config) {
-    // This can happen during server-side rendering, return a default/empty state
+    // This can happen during server-side rendering, return an empty structure
     return { result: { types: [] } };
   }
   
   const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
 
-  console.groupCollapsed(`[Bitrix API Call] ➡️ ${method}`);
+  console.log(`[Bitrix API Call] ➡️ ${method}`);
   console.log('URL:', url);
   console.log('Params:', params);
   
@@ -38,8 +38,6 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
     },
     body: JSON.stringify(params),
   });
-  
-  console.groupEnd();
 
   if (!response.ok) {
     let errorData;
@@ -64,17 +62,22 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
 export const BitrixService = {
   async getSmartProcesses(): Promise<CrmEntity[]> {
     const data = await fetchFromBitrix('crm.type.list');
-    console.log('crm.type.list:', data);
-    if (!data.result || !data.result.types) return [];
     
-    // Map the API response (e.g., 'ID', 'NAME') to our CrmEntity type ('id', 'title')
+    // Log the raw Bitrix return
+    console.log('Raw Bitrix response for crm.type.list:', data);
+
+    if (!data.result || !data.result.types) {
+        console.error("A resposta da API não contém 'result.types'.");
+        return [];
+    };
+    
     const mappedTypes = data.result.types.map((type: any) => ({
-      id: `${type.ENTITY_TYPE_ID}-${type.ID}`, // Composite key
-      title: type.NAME,
-      entityTypeId: type.ENTITY_TYPE_ID,
-      created: new Date().toISOString(), // Placeholder, as API doesn't provide this
+      id: `${type.entityTypeId}-${type.id}`, 
+      title: type.name,
+      entityTypeId: type.entityTypeId,
+      created: new Date().toISOString(), 
     }));
-    console.log('[Bitrix Service] Mapped CRM Entities:', mappedTypes);
-    return mappedTypes;
+    
+    return [];
   },
 };
