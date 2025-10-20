@@ -3,14 +3,13 @@
 
 import type { BitrixApiConfig, CrmEntity } from './types';
 
-function getBitrixConfig(): BitrixApiConfig {
+function getBitrixConfig(): BitrixApiConfig | null {
   if (typeof window === 'undefined') {
-    // Return a dummy config on the server to avoid errors during SSR
-    return { baseUrl: '', userId: '', apiToken: '' };
+    return null;
   }
   const configStr = localStorage.getItem('bitrixConfig');
   if (!configStr) {
-    throw new Error("Configurações do Bitrix não encontradas. Por favor, configure-as na página de Configurações.");
+     throw new Error("Configurações do Bitrix não encontradas. Por favor, configure-as na página de Configurações.");
   }
   const config: BitrixApiConfig = JSON.parse(configStr);
    if (!config.baseUrl || !config.userId || !config.apiToken) {
@@ -21,9 +20,9 @@ function getBitrixConfig(): BitrixApiConfig {
 
 async function fetchFromBitrix(method: string, params: Record<string, any> = {}) {
   const config = getBitrixConfig();
-  // Don't try to fetch on the server if config is dummy
-  if (typeof window === 'undefined' && !config.baseUrl) {
-    return { result: [] }; // or some other sensible default for SSR
+  if (!config) {
+    // This can happen during server-side rendering, return a default/empty state
+    return { result: { types: [] } };
   }
   
   const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
@@ -54,22 +53,22 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   }
 
   const data = await response.json();
-  console.log(`[Bitrix API Response] ⬅️ ${method}:`, data); // Log the full response
   
   if (data.error) {
      throw new Error(`[${data.error}] ${data.error_description}`);
   }
   
-  return data.result;
+  return data;
 }
 
 export const BitrixService = {
   async getSmartProcesses(): Promise<CrmEntity[]> {
     const data = await fetchFromBitrix('crm.type.list');
-    if (!data.types) return [];
+    console.log('crm.type.list:', data);
+    if (!data.result || !data.result.types) return [];
     
     // Map the API response (e.g., 'ID', 'NAME') to our CrmEntity type ('id', 'title')
-    const mappedTypes = data.types.map((type: any) => ({
+    const mappedTypes = data.result.types.map((type: any) => ({
       id: `${type.ENTITY_TYPE_ID}-${type.ID}`, // Composite key
       title: type.NAME,
       entityTypeId: type.ENTITY_TYPE_ID,
