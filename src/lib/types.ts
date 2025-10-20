@@ -1,8 +1,8 @@
 export type CrmEntity = {
-  id: string; // This is the 'ID' from Bitrix API
+  id: string;
   entityTypeId: number;
   title: string;
-  created: string; // Keep as string for mock data compatibility
+  created: string;
   isStagesEnabled?: string;
   isClientEnabled?: string;
   isUseInUserfieldEnabled?: string;
@@ -20,7 +20,15 @@ export type CrmEntity = {
   titlePlaceholder?: string;
 };
 
-export type CrmFieldType = 'string' | 'double' | 'datetime' | 'boolean' | 'crm_status' | 'enumeration' | 'user' | 'file';
+export type CrmFieldType =
+  | 'string'
+  | 'double'
+  | 'datetime'
+  | 'boolean'
+  | 'crm_status'
+  | 'enumeration'
+  | 'user'
+  | 'file';
 
 export type CrmField = {
   id: number;
