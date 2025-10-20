@@ -27,6 +27,11 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   }
   
   const url = `${config.baseUrl}/rest/${config.apiToken}/${method}.json`;
+
+  console.groupCollapsed(`[Bitrix API Call] ➡️ ${method}`);
+  console.log('URL:', url);
+  console.log('Params:', params);
+  console.groupEnd();
   
   const response = await fetch(url, {
     method: 'POST',
