@@ -67,7 +67,7 @@ export const BitrixService = {
     
     // Map the API response (e.g., 'ID', 'NAME') to our CrmEntity type ('id', 'title')
     return data.types.map((type: any) => ({
-      id: type.ID,
+      id: `${type.ENTITY_TYPE_ID}-${type.ID}`, // Composite key
       title: type.NAME,
       entityTypeId: type.ENTITY_TYPE_ID,
       created: new Date().toISOString(), // Placeholder, as API doesn't provide this

@@ -42,7 +42,7 @@ export function CreateCrmDialog({
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const newCrm: CrmEntity = {
-      id: `crm-${Date.now()}`,
+      id: `${entityTypeId}-${Date.now()}`,
       title,
       entityTypeId,
       created: new Date().toISOString(),
