@@ -1,11 +1,27 @@
 export type CrmEntity = {
-  id: string;
+  id: string; // Internal ID for mock data, will be 'ID' from API
+  ID?: string; // ID from Bitrix24 API
   entityTypeId: number;
   title: string;
-  created: string;
+  created: string; // Keep as string for mock data compatibility
+  isStagesEnabled?: string;
+  isClientEnabled?: string;
+  isUseInUserfieldEnabled?: string;
+  isLinkWithProductsEnabled?: string;
+  isMycompanyEnabled?: string;
+  isDocumentsEnabled?: string;
+  isSourceEnabled?: string;
+  isObserversEnabled?: string;
+  isRecyclebinEnabled?: string;
+  isAutomationEnabled?: string;
+  isBizProcEnabled?: string;
+  isCountersEnabled?: string;
+  customSectionId?: number | null;
+  customPageUrl?: string;
+  titlePlaceholder?: string;
 };
 
-export type CrmFieldType = 'string' | 'double' | 'datetime' | 'boolean' | 'crm_status';
+export type CrmFieldType = 'string' | 'double' | 'datetime' | 'boolean' | 'crm_status' | 'enumeration' | 'user' | 'file';
 
 export type CrmField = {
   id: number;
@@ -33,4 +49,9 @@ export type TimelineLog = {
     type: string;
   };
   description: string;
+};
+
+export type BitrixApiConfig = {
+  baseUrl: string;
+  apiToken: string;
 };

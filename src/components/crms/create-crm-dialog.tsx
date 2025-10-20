@@ -37,7 +37,7 @@ export function CreateCrmDialog({
     const title = formData.get("title") as string;
     const entityTypeId = Number(formData.get("entityTypeId"));
 
-    console.log("Simulando chamada de API para criar CRM...");
+    console.log("Chamada de API para criar CRM (simulada)...");
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 

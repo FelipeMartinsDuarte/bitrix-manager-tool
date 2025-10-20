@@ -39,7 +39,7 @@ export function EditCrmDialog({
     const title = formData.get("title") as string;
     const entityTypeId = Number(formData.get("entityTypeId"));
 
-    console.log("Simulando chamada de API para editar CRM...");
+    console.log("Chamada de API para editar CRM (simulada)...");
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 

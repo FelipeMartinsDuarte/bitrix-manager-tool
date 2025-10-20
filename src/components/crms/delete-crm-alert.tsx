@@ -36,7 +36,7 @@ export function DeleteCrmAlert({
   const handleDelete = async () => {
     setIsDeleting(true);
 
-    console.log(`Simulando chamada de API para deletar CRM com ID: ${crmId}`);
+    console.log(`Chamada de API para deletar CRM com ID: ${crmId} (simulada)`);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
