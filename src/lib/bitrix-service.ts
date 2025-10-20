@@ -26,7 +26,7 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   
   const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
 
-  console.log(`[Bitrix API Call] ➡️ ${method}`, { params });
+  console.log(`[Bitrix API Call] ➡️ ${method}`, { url, params });
   
   const response = await fetch(url, {
     method: 'POST',
@@ -64,7 +64,8 @@ export const BitrixService = {
       entityTypeId: type.entityTypeId,
       created: type.createdTime || new Date().toISOString(), 
     }));
-
+    
+    console.log("[Bitrix Service] Mapped CRM Entities:", mappedTypes);
     return mappedTypes;
   },
 
@@ -77,21 +78,17 @@ export const BitrixService = {
       entityId: entityId
     });
 
-    console.log("Raw data from userfieldconfig.list:", data);
-
-    // Temporarily disabled the check to log the raw data
-    //  if (!data.result || !Array.isArray(data.result)) {
-    //     console.error("A resposta da API para userfieldconfig.list não contém 'result' como um array.");
-    //     return [];
-    // };
+    if (!data.result || !Array.isArray(data.result.fields)) {
+       console.error("A resposta da API para userfieldconfig.list não contém 'result.fields' como um array.", data);
+       return [];
+    }
     
-    // Assuming the result is an array for now, this will likely fail and we'll fix it with the logged data.
-    const resultList = data.result || [];
+    const resultList = data.result.fields || [];
     
     const mappedFields: CrmField[] = resultList.map((field: any) => ({
       id: field.id,
       fieldName: field.fieldName,
-      listLabel: field.listLabel || field.editFormLabel,
+      listLabel: field.listLabel || field.editFormLabel || field.fieldName,
       type: field.userTypeId,
       isMultiple: field.multiple === 'Y',
       isPublic: true, 
