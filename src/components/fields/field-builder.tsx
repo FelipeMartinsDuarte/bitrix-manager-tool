@@ -38,7 +38,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { MultiSelect } from '../ui/multi-select';
 import { BitrixService } from '@/lib/bitrix-service';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const fieldTypes: { value: CrmFieldType, label: string }[] = [
   { value: 'string', label: 'Texto (string)' },
@@ -59,7 +58,6 @@ type PayloadPreview = {
     EDIT_FORM_LABEL: string;
     LIST_COLUMN_LABEL: string;
     MULTIPLE: 'Y' | 'N';
-    SETTINGS?: Record<string, any>;
   }
 }
 
@@ -108,19 +106,18 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     }
   }, [watchedListLabel, setValue]);
 
-  const watchedValues = watch();
   useEffect(() => {
     const subscription = watch((value) => {
       const { crmIds = [], listLabel, fieldNamePrefix, isMultiple, type } = value;
       const selectedCrms = crms.filter(c => crmIds.includes(c.id));
 
-      if (!listLabel || !fieldNamePrefix || !type) {
+      if (!listLabel || !fieldNamePrefix || !type || selectedCrms.length === 0) {
         setPayloads([]);
         return;
       }
 
       const payloadPreviews = selectedCrms.map(crm => {
-        const crmSpecificFieldName = fieldNamePrefix.replace('{ID}', crm.entityTypeId.toString());
+        const crmSpecificFieldName = fieldNamePrefix?.replace('{ID}', crm.entityTypeId.toString()) || '';
         
         return {
           entityTypeId: crm.entityTypeId,
@@ -137,7 +134,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
       setPayloads(payloadPreviews);
     });
     return () => subscription.unsubscribe();
-  }, [watch, crms, watchedCrmIds]);
+  }, [watch, crms]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -166,7 +163,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
 
     if (failures > 0) {
          const failedCrms = results
-            .map((r, index) => (r.status === 'rejected' ? crms.find(c=> c.id === values.crmIds[index])?.title : null))
+            .map((r, index) => (r.status === 'rejected' ? crms.find(c=> c.id === payloads[index].entityTypeId.toString())?.title : null))
             .filter(Boolean)
             .join(', ');
 
@@ -184,6 +181,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     }
 
      form.reset();
+     setPayloads([]);
   }
   
   const crmOptions = useMemo(() => crms.map(crm => ({ value: crm.id, label: crm.title })), [crms]);
