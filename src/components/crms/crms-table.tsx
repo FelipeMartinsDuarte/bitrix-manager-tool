@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   Table,
   TableBody,
@@ -24,6 +25,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 type CrmsTableProps = {
   data: CrmEntity[];
 };
+
+function FormattedDate({ dateString }: { dateString: string }) {
+    const [formattedDate, setFormattedDate] = React.useState('');
+
+    React.useEffect(() => {
+        setFormattedDate(new Date(dateString).toLocaleDateString());
+    }, [dateString]);
+
+    return <>{formattedDate}</>;
+}
+
 
 export default function CrmsTable({ data }: CrmsTableProps) {
   return (
@@ -51,7 +63,7 @@ export default function CrmsTable({ data }: CrmsTableProps) {
                   <Badge variant="outline">{crm.entityTypeId}</Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {new Date(crm.created).toLocaleDateString()}
+                  <FormattedDate dateString={crm.created} />
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
