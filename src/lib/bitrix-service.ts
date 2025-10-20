@@ -24,7 +24,7 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
     throw new Error("Configurações do Bitrix não encontradas.");
   }
   
-  const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
+  const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}`;
 
   console.log(`[Bitrix API Call] ➡️ ${method}`, { url, params });
   
@@ -61,7 +61,7 @@ export const BitrixService = {
     console.log('crm.type.list raw types:', data.result.types);
     
     const mappedTypes = data.result.types.map((type: any) => ({
-      id: type.id,
+      id: type.id.toString(),
       title: type.title,
       entityTypeId: type.entityTypeId,
       created: type.createdTime || new Date().toISOString(), 
@@ -98,7 +98,7 @@ export const BitrixService = {
   
   async createField(entityTypeId: number, field: any): Promise<any> {
      const payload = {
-      entityId: `crm_${entityTypeId}`, // O entityId para criar campos é diferente
+      entityId: `CRM_${entityTypeId}`, 
       field: field,
     };
     console.log(`[Bitrix POST Payload] ➡️ crm.userfield.add for entityTypeId ${entityTypeId}:`, payload);
@@ -107,5 +107,3 @@ export const BitrixService = {
     return data.result;
   }
 };
-
-    
