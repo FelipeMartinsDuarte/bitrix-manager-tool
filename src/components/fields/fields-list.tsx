@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from 'react';
-import { MOCK_CRMS, MOCK_FIELDS } from '@/lib/mock-data';
+import { MOCK_FIELDS } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,9 +34,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import type { CrmEntity } from '@/lib/types';
 
-export function FieldsList() {
+type FieldsListProps = {
+  crms: CrmEntity[];
+}
+
+export function FieldsList({ crms }: FieldsListProps) {
   const [selectedCrmId, setSelectedCrmId] = useState<string | null>(null);
+  // TODO: Replace MOCK_FIELDS with a real API call
   const fields = selectedCrmId ? MOCK_FIELDS[selectedCrmId] || [] : [];
 
   return (
@@ -53,7 +60,7 @@ export function FieldsList() {
                     <SelectValue placeholder="Selecione um CRM" />
                 </SelectTrigger>
                 <SelectContent>
-                    {MOCK_CRMS.map((crm) => (
+                    {crms.map((crm) => (
                     <SelectItem key={crm.id} value={crm.id}>
                         {crm.title}
                     </SelectItem>
@@ -110,7 +117,7 @@ export function FieldsList() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
-                      Nenhum campo encontrado para este CRM.
+                      Nenhum campo encontrado para este CRM. (Usando dados mock)
                     </TableCell>
                   </TableRow>
                 )}

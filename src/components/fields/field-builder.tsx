@@ -6,8 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
-import { MOCK_CRMS } from '@/lib/mock-data';
-import { CrmFieldType } from '@/lib/types';
+import { CrmFieldType, type CrmEntity } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -54,7 +53,11 @@ const formSchema = z.object({
   isMultiple: z.boolean().default(false),
 });
 
-export function FieldBuilder() {
+type FieldBuilderProps = {
+  crms: CrmEntity[];
+}
+
+export function FieldBuilder({ crms }: FieldBuilderProps) {
   const [payload, setPayload] = useState({});
   const { toast } = useToast();
 
@@ -73,26 +76,29 @@ export function FieldBuilder() {
   const watchedCrmId = watch('crmId');
   const watchedListLabel = watch('listLabel');
 
+  const selectedCrm = useMemo(() => {
+    return crms.find(c => c.id === watchedCrmId);
+  }, [crms, watchedCrmId]);
+
   useEffect(() => {
-    const crm = MOCK_CRMS.find(c => c.id === watchedCrmId);
-    if (crm && watchedListLabel) {
+    if (selectedCrm && watchedListLabel) {
       const formattedName = watchedListLabel
         .trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
         .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
         .replace(/\s+/g, '_')
         .toUpperCase();
-      setValue('fieldName', `UF_CRM_${crm.entityTypeId}_${formattedName}`);
+      setValue('fieldName', `UF_CRM_${selectedCrm.entityTypeId}_${formattedName}`);
     } else {
         setValue('fieldName', '');
     }
-  }, [watchedCrmId, watchedListLabel, setValue]);
+  }, [selectedCrm, watchedListLabel, setValue]);
   
   const watchedValues = watch();
   useEffect(() => {
       const subscription = watch((value) => {
         const { crmId, ...rest } = value;
-        const crm = MOCK_CRMS.find(c => c.id === crmId);
+        const crm = crms.find(c => c.id === crmId);
         const payloadPreview = {
           entityTypeId: crm?.entityTypeId,
           field: {
@@ -105,18 +111,20 @@ export function FieldBuilder() {
         };
         // @ts-ignore
         delete payloadPreview.field.type;
+        // @ts-ignore
+        delete payloadPreview.field.crmId;
         setPayload(payloadPreview);
       });
       return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, crms]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Simulando chamada de API para criar campo...");
     await new Promise(resolve => setTimeout(resolve, 1500));
     console.log("Payload simulado:", payload);
     toast({
-        title: "Campo criado com sucesso!",
-        description: `O campo "${values.listLabel}" foi enviado para o Bitrix (simulação).`
+        title: "Campo criado com sucesso! (Simulação)",
+        description: `O campo "${values.listLabel}" foi enviado para o Bitrix.`
     })
   }
 
@@ -145,7 +153,7 @@ export function FieldBuilder() {
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                        {MOCK_CRMS.map((crm) => (
+                        {crms.map((crm) => (
                             <SelectItem key={crm.id} value={crm.id}>
                             {crm.title}
                             </SelectItem>
