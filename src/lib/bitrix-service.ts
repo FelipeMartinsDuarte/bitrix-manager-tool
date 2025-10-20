@@ -5,8 +5,6 @@ import type { BitrixApiConfig, CrmEntity, CrmField } from './types';
 
 function getBitrixConfig(): BitrixApiConfig {
   if (typeof window === 'undefined') {
-    // This is a safeguard for SSR, though we expect this to run client-side.
-    // An empty config will cause controlled errors downstream.
     return { baseUrl: '', userId: '', apiToken: '' };
   }
   const configStr = localStorage.getItem('bitrixConfig');
@@ -23,7 +21,6 @@ function getBitrixConfig(): BitrixApiConfig {
 async function fetchFromBitrix(method: string, params: Record<string, any> = {}) {
   const config = getBitrixConfig();
   if (!config.baseUrl) {
-    // If config is empty (e.g. from SSR safeguard), throw error before fetching.
     throw new Error("Configurações do Bitrix não encontradas.");
   }
   
@@ -62,7 +59,7 @@ export const BitrixService = {
     };
     
     const mappedTypes = data.result.types.map((type: any) => ({
-      id: `T${type.entityTypeId}_${type.id}`, // Create a more unique ID
+      id: `T${type.entityTypeId}_${type.id}`,
       title: type.title,
       entityTypeId: type.entityTypeId,
       created: type.createdTime || new Date().toISOString(), 
@@ -76,6 +73,7 @@ export const BitrixService = {
     console.log(`Mandando para a API o entityId: ${entityId}`);
     
     const data = await fetchFromBitrix('userfieldconfig.list', {
+      moduleId: 'crm', // Adicionado para corrigir o erro da API
       entityId: entityId
     });
 
@@ -87,10 +85,10 @@ export const BitrixService = {
     const mappedFields: CrmField[] = data.result.map((field: any) => ({
       id: field.id,
       fieldName: field.fieldName,
-      listLabel: field.listLabel || field.editFormLabel, // Fallback
+      listLabel: field.listLabel || field.editFormLabel,
       type: field.userTypeId,
       isMultiple: field.multiple === 'Y',
-      isPublic: true, // Assuming public, API doesn't seem to provide this
+      isPublic: true, 
     }));
 
     return mappedFields;
