@@ -6,15 +6,15 @@ import type { BitrixApiConfig, CrmEntity } from './types';
 function getBitrixConfig(): BitrixApiConfig {
   if (typeof window === 'undefined') {
     // Return a dummy config on the server to avoid errors during SSR
-    return { baseUrl: '', apiToken: '' };
+    return { baseUrl: '', userId: '', apiToken: '' };
   }
   const configStr = localStorage.getItem('bitrixConfig');
   if (!configStr) {
     throw new Error("Configurações do Bitrix não encontradas. Por favor, configure-as na página de Configurações.");
   }
-  const config = JSON.parse(configStr);
-   if (!config.baseUrl || !config.apiToken) {
-    throw new Error("A URL base e o Token da API do Bitrix são obrigatórios. Por favor, configure-os na página de Configurações.");
+  const config: BitrixApiConfig = JSON.parse(configStr);
+   if (!config.baseUrl || !config.userId || !config.apiToken) {
+    throw new Error("A URL base, o ID de usuário e o Token da API são obrigatórios. Por favor, configure-os na página de Configurações.");
   }
   return config;
 }
@@ -26,7 +26,7 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
     return { result: [] }; // or some other sensible default for SSR
   }
   
-  const url = `${config.baseUrl}/rest/${config.apiToken}/${method}.json`;
+  const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
 
   console.groupCollapsed(`[Bitrix API Call] ➡️ ${method}`);
   console.log('URL:', url);

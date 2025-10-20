@@ -17,7 +17,8 @@ import type { BitrixApiConfig } from "@/lib/types";
 
 const formSchema = z.object({
   baseUrl: z.string().url("Por favor, insira uma URL válida (ex: https://dominio.bitrix24.com.br)."),
-  apiToken: z.string().min(1, "O token da API é obrigatório."),
+  userId: z.string().min(1, "O ID do usuário é obrigatório."),
+  apiToken: z.string().min(1, "O token do webhook é obrigatório."),
 });
 
 export default function SettingsPage() {
@@ -26,6 +27,7 @@ export default function SettingsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       baseUrl: "",
+      userId: "",
       apiToken: "",
     },
   });
@@ -60,8 +62,8 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Credenciais da API Bitrix24</CardTitle>
               <CardDescription>
-                Insira a URL base e o token de webhook da sua conta Bitrix24. Essas informações
-                ficarão salvas apenas no seu navegador.
+                Insira a URL base, o ID de usuário e o token de webhook da sua conta Bitrix24.
+                Essas informações ficarão salvas apenas no seu navegador.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -80,10 +82,23 @@ export default function SettingsPage() {
               />
               <FormField
                 control={form.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID do Usuário (do webhook)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="1036" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="apiToken"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Token do Webhook (REST API)</FormLabel>
+                    <FormLabel>Token do Webhook</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="******************************" {...field} />
                     </FormControl>

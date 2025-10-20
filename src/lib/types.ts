@@ -53,5 +53,6 @@ export type TimelineLog = {
 
 export type BitrixApiConfig = {
   baseUrl: string;
+  userId: string;
   apiToken: string;
 };
