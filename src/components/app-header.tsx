@@ -1,7 +1,6 @@
 
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   PanelLeft,
@@ -19,16 +18,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { MOCK_USERS } from "@/lib/mock-data";
 
 const navItems = [
   { href: "/crms", icon: Warehouse, label: "CRMs" },
@@ -39,8 +28,6 @@ const navItems = [
 
 export function AppHeader() {
   const pathname = usePathname();
-  const adminUser = MOCK_USERS.find(u => u.NAME === 'Admin');
-  const userImage = PlaceHolderImages.find(p => p.id === 'user3');
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -92,32 +79,6 @@ export function AppHeader() {
       <div className="relative ml-auto flex-1 md:grow-0">
         {/* Can be a search bar later */}
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="overflow-hidden rounded-full"
-          >
-            <Image
-              src={userImage?.imageUrl || "/placeholder-user.jpg"}
-              width={40}
-              height={40}
-              alt="Avatar"
-              className="overflow-hidden rounded-full"
-              data-ai-hint={userImage?.imageHint}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>{adminUser?.NAME} {adminUser?.LAST_NAME}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Configurações</DropdownMenuItem>
-          <DropdownMenuItem>Suporte</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Sair</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </header>
   );
 }
