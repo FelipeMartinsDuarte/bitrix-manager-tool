@@ -69,8 +69,8 @@ export default function CrmsTable({ data, onUpdate, onDelete }: CrmsTableProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((crm) => (
-              <TableRow key={crm.id}>
+            {data.map((crm, index) => (
+              <TableRow key={`${crm.id}-${index}`}>
                 <TableCell className="font-medium">{crm.title}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   <Badge variant="outline">{crm.entityTypeId}</Badge>

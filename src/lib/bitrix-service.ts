@@ -31,7 +31,6 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   console.groupCollapsed(`[Bitrix API Call] ➡️ ${method}`);
   console.log('URL:', url);
   console.log('Params:', params);
-  console.groupEnd();
   
   const response = await fetch(url, {
     method: 'POST',
@@ -40,6 +39,8 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
     },
     body: JSON.stringify(params),
   });
+  
+  console.groupEnd();
 
   if (!response.ok) {
     let errorData;
@@ -53,6 +54,8 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   }
 
   const data = await response.json();
+  console.log(`[Bitrix API Response] ⬅️ ${method}:`, data); // Log the full response
+  
   if (data.error) {
      throw new Error(`[${data.error}] ${data.error_description}`);
   }
@@ -66,11 +69,13 @@ export const BitrixService = {
     if (!data.types) return [];
     
     // Map the API response (e.g., 'ID', 'NAME') to our CrmEntity type ('id', 'title')
-    return data.types.map((type: any) => ({
+    const mappedTypes = data.types.map((type: any) => ({
       id: `${type.ENTITY_TYPE_ID}-${type.ID}`, // Composite key
       title: type.NAME,
       entityTypeId: type.ENTITY_TYPE_ID,
       created: new Date().toISOString(), // Placeholder, as API doesn't provide this
     }));
+    console.log('[Bitrix Service] Mapped CRM Entities:', mappedTypes);
+    return mappedTypes;
   },
 };
