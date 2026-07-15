@@ -94,47 +94,40 @@ export const BitrixService = {
   return mappedTypes;
 },
 
-/** typeId = types[].id (CRM_{id}). Busca todas as páginas (Bitrix: 50/página) e devolve numa lista. */
-async getFieldsForCrm(typeId: string | number): Promise<CrmField[]> {
-  const entityId = `CRM_${typeId}`;
-  const allFields: any[] = [];
-  let start = 0;
+/** entityTypeId do SPA (crm.type.list). Usa crm.item.fields → title + UF_CRM_*. */
+async getFieldsForCrm(entityTypeId: string | number): Promise<CrmField[]> {
+  const data = await fetchFromBitrix('crm.item.fields', {
+    entityTypeId: Number(entityTypeId),
+    useOriginalUfNames: 'Y',
+  });
 
-  while (true) {
-    const data = await fetchFromBitrix('userfieldconfig.list', {
-      moduleId: 'crm',
-      // sem language: traz mapa completo de labels (br/pt/en/…)
-      select: ['*'],
-      filter: { entityId },
-      start,
-    });
-
-    if (!data.result || !Array.isArray(data.result.fields)) {
-      console.error("A resposta da API para userfieldconfig.list não contém 'result.fields' como um array.", data);
-      break;
-    }
-
-    allFields.push(...data.result.fields);
-
-    // Bitrix às vezes devolve next como string ("50")
-    const next = data.next != null && data.next !== '' ? Number(data.next) : NaN;
-    if (!Number.isFinite(next) || next <= start) break;
-    start = next;
+  const fieldsMap = data.result?.fields;
+  if (!fieldsMap || typeof fieldsMap !== 'object') {
+    console.error("A resposta de crm.item.fields não contém result.fields.", data);
+    return [];
   }
 
-  return allFields
-    .filter((f) => f.entityId === entityId)
-    .map((field) => ({
-      id: Number(field.id),
-      fieldName: field.fieldName,
-      listLabel: pickLabel(
-        field.editFormLabel,
-        pickLabel(field.listColumnLabel, pickLabel(field.listFilterLabel, field.fieldName))
-      ),
-      type: field.userTypeId,
-      isMultiple: field.multiple === 'Y',
+  const mapped: CrmField[] = [];
+  let index = 0;
+
+  for (const [key, meta] of Object.entries(fieldsMap) as [string, any][]) {
+    if (!meta || meta.isDynamic !== true) continue;
+
+    const fieldName = String(meta.upperName || key);
+    if (!/^UF_/i.test(fieldName)) continue;
+
+    const title = typeof meta.title === 'string' ? meta.title.trim() : '';
+    mapped.push({
+      id: ++index,
+      fieldName,
+      listLabel: title || fieldName,
+      type: meta.type,
+      isMultiple: Boolean(meta.isMultiple),
       isPublic: true,
-    }));
+    });
+  }
+
+  return mapped;
 },
 
 /** Cria campo via userfieldconfig.add; typeId = types[].id */

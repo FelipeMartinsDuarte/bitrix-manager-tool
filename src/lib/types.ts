@@ -24,11 +24,14 @@ export type CrmFieldType =
   | 'string'
   | 'double'
   | 'datetime'
+  | 'date'
   | 'boolean'
   | 'crm_status'
   | 'enumeration'
   | 'user'
-  | 'file';
+  | 'employee'
+  | 'file'
+  | string;
 
 export type CrmField = {
   id: number;

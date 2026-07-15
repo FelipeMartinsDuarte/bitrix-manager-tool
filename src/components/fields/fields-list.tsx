@@ -58,8 +58,8 @@ export function FieldsList({ crms }: FieldsListProps) {
     setFields([]);
 
     try {
-      // crm.id = types[].id do SPA (CRM_{id}), não entityTypeId
-      const fetchedFields = await BitrixService.getFieldsForCrm(crm.id);
+      // crm.item.fields usa entityTypeId; título vem em meta.title
+      const fetchedFields = await BitrixService.getFieldsForCrm(crm.entityTypeId);
       setFields(fetchedFields);
     } catch (e: any) {
       setError(e.message || "Falha ao buscar campos.");
