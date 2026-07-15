@@ -49,21 +49,6 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   return data;
 }
 
-/** Labels da API: string ou mapa ({ br, pt, en, ... }). */
-function pickLabel(value: unknown, fallback: string): string {
-  if (typeof value === 'string' && value.trim()) return value;
-  if (value && typeof value === 'object') {
-    const map = value as Record<string, string | null | undefined>;
-    for (const key of ['br', 'pt', 'pt_BR', 'ru', 'en', 'de', 'la']) {
-      const v = map[key];
-      if (typeof v === 'string' && v.trim()) return v;
-    }
-    const first = Object.values(map).find((v) => typeof v === 'string' && v.trim());
-    if (first) return first;
-  }
-  return fallback;
-}
-
 function toLangMap(label: string | Record<string, string>): Record<string, string> {
   if (typeof label === 'string') {
     return { br: label, pt: label, en: label };
