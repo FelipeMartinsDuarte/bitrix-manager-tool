@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { BitrixApiConfig, CrmEntity, CrmField } from './types';
@@ -24,7 +23,8 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
     throw new Error("Configurações do Bitrix não encontradas.");
   }
   
-  const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}`;
+  // Bitrix aceita com ou sem .json; .json é o formato clássico do webhook
+  const url = `${config.baseUrl}/rest/${config.userId}/${config.apiToken}/${method}.json`;
 
   console.log(`[Bitrix API Call] ➡️ ${method}`, { url, params });
   
@@ -49,6 +49,26 @@ async function fetchFromBitrix(method: string, params: Record<string, any> = {})
   return data;
 }
 
+/** Labels da API podem vir string ou mapa por idioma ({ pt, en, ... }). */
+function pickLabel(value: unknown, fallback: string): string {
+  if (typeof value === 'string' && value.trim()) return value;
+  if (value && typeof value === 'object') {
+    const map = value as Record<string, string | null | undefined>;
+    const preferred = map.pt || map.br || map.en || map.de;
+    if (preferred) return preferred;
+    const first = Object.values(map).find((v) => typeof v === 'string' && v.trim());
+    if (first) return first;
+  }
+  return fallback;
+}
+
+function toLangMap(label: string | Record<string, string>): Record<string, string> {
+  if (typeof label === 'string') {
+    return { pt: label, en: label };
+  }
+  return label;
+}
+
 export const BitrixService = {
   async getSmartProcesses(): Promise<CrmEntity[]> {
     const data = await fetchFromBitrix('crm.type.list');
@@ -60,50 +80,76 @@ export const BitrixService = {
     
     console.log('crm.type.list raw types:', data.result.types);
     
-    const mappedTypes = data.result.types.map((type: any) => ({
-      id: type.id.toString(),
-      title: type.title,
-      entityTypeId: type.entityTypeId,
-      created: type.createdTime || new Date().toISOString(), 
-    }));
-    
-    console.log("[Bitrix Service] Mapped CRM Entities:", mappedTypes);
-    return mappedTypes;
-  },
+  // id = ordinal do SPA (CRM_{id}); entityTypeId = tipo dinâmico
+  const mappedTypes = data.result.types.map((type: any) => ({
+    id: type.id.toString(),
+    title: type.title,
+    entityTypeId: type.entityTypeId,
+    created: type.createdTime || new Date().toISOString(), 
+  }));
+  
+  console.log("[Bitrix Service] Mapped CRM Entities:", mappedTypes);
+  return mappedTypes;
+},
 
-  async getFieldsForCrm(entityTypeId: number): Promise<CrmField[]> {
+/** typeId = types[].id (CRM_{id}), não entityTypeId. Pagina até acabar (máx. 50/página). */
+async getFieldsForCrm(typeId: string | number): Promise<CrmField[]> {
+  const entityId = `CRM_${typeId}`;
+  const allFields: any[] = [];
+  let start: number | undefined = 0;
+
+  while (start !== undefined) {
     const data = await fetchFromBitrix('userfieldconfig.list', {
-      moduleId: 'crm', 
-      entityId: `CRM_${entityTypeId}`
+      moduleId: 'crm',
+      select: { 0: '*', language: 'pt' },
+      filter: { entityId },
+      start,
     });
 
     if (!data.result || !Array.isArray(data.result.fields)) {
-       console.error("A resposta da API para userfieldconfig.list não contém 'result.fields' como um array.", data);
-       return [];
+      console.error("A resposta da API para userfieldconfig.list não contém 'result.fields' como um array.", data);
+      break;
     }
-    
-    const resultList = data.result.fields || [];
-    
-    const mappedFields: CrmField[] = resultList.map((field: any) => ({
-      id: field.id,
+
+    allFields.push(...data.result.fields);
+    start = typeof data.next === 'number' ? data.next : undefined;
+  }
+
+  return allFields
+    .filter((f) => f.entityId === entityId)
+    .map((field) => ({
+      id: Number(field.id),
       fieldName: field.fieldName,
-      listLabel: field.listLabel || field.editFormLabel || field.fieldName,
+      listLabel: pickLabel(field.listColumnLabel, pickLabel(field.editFormLabel, field.fieldName)),
       type: field.userTypeId,
       isMultiple: field.multiple === 'Y',
-      isPublic: true, 
+      isPublic: true,
     }));
+},
 
-    return mappedFields;
-  },
-  
-  async createField(entityTypeId: number, field: any): Promise<any> {
-     const payload = {
-      entityId: `CRM_${entityTypeId}`, 
-      field: field,
+/** Cria campo via userfieldconfig.add; typeId = types[].id */
+async createField(typeId: string | number, field: {
+  fieldName: string;
+  userTypeId: string;
+  multiple: 'Y' | 'N';
+  editFormLabel: string | Record<string, string>;
+  listColumnLabel?: string | Record<string, string>;
+}): Promise<any> {
+    const entityId = `CRM_${typeId}`;
+    const payload = {
+      moduleId: 'crm',
+      field: {
+        entityId,
+        fieldName: field.fieldName,
+        userTypeId: field.userTypeId,
+        multiple: field.multiple,
+        editFormLabel: toLangMap(field.editFormLabel),
+        listColumnLabel: toLangMap(field.listColumnLabel ?? field.editFormLabel),
+      },
     };
-    console.log(`[Bitrix POST Payload] ➡️ crm.userfield.add for entityTypeId ${entityTypeId}:`, payload);
-    const data = await fetchFromBitrix('crm.userfield.add', payload);
-    console.log(`[Bitrix POST Return] ⬅️ crm.userfield.add for entityTypeId ${entityTypeId}:`, data);
+    console.log(`[Bitrix POST Payload] ➡️ userfieldconfig.add for ${entityId}:`, payload);
+    const data = await fetchFromBitrix('userfieldconfig.add', payload);
+    console.log(`[Bitrix POST Return] ⬅️ userfieldconfig.add for ${entityId}:`, data);
     return data.result;
   }
 };

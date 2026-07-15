@@ -51,13 +51,13 @@ const fieldTypes: { value: CrmFieldType, label: string }[] = [
 ];
 
 type PayloadPreview = {
-  entityTypeId: number,
+  typeId: string;
   field: {
-    USER_TYPE_ID: CrmFieldType;
-    FIELD_NAME: string;
-    EDIT_FORM_LABEL: string;
-    LIST_COLUMN_LABEL: string;
-    MULTIPLE: 'Y' | 'N';
+    fieldName: string;
+    userTypeId: CrmFieldType;
+    editFormLabel: string;
+    listColumnLabel: string;
+    multiple: 'Y' | 'N';
   }
 }
 
@@ -90,7 +90,6 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
 
   const { watch, setValue, formState: { isSubmitting } } = form;
   const watchedListLabel = watch('listLabel');
-  const watchedCrmIds = watch('crmIds');
 
   useEffect(() => {
     if (watchedListLabel) {
@@ -116,21 +115,21 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
         return;
       }
 
-      const payloadPreviews = selectedCrms.map(crm => {
-        const crmSpecificFieldName = fieldNamePrefix?.replace('{ID}', crm.entityTypeId.toString()) || '';
+      // {ID} = types[].id do SPA (CRM_{id} / UF_CRM_{id}_...), não entityTypeId
+      const payloadPreviews: PayloadPreview[] = selectedCrms.map(crm => {
+        const crmSpecificFieldName = fieldNamePrefix?.replace('{ID}', crm.id) || '';
         
         return {
-          entityTypeId: crm.entityTypeId,
+          typeId: crm.id,
           field: {
-            FIELD_NAME: crmSpecificFieldName,
-            EDIT_FORM_LABEL: listLabel,
-            LIST_COLUMN_LABEL: listLabel,
-            USER_TYPE_ID: type,
-            MULTIPLE: isMultiple ? 'Y' : 'N',
+            fieldName: crmSpecificFieldName,
+            editFormLabel: listLabel,
+            listColumnLabel: listLabel,
+            userTypeId: type,
+            multiple: isMultiple ? 'Y' : 'N',
           }
         };
       });
-      // @ts-ignore
       setPayloads(payloadPreviews);
     });
     return () => subscription.unsubscribe();
@@ -148,7 +147,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     }
 
     const results = await Promise.allSettled(
-        payloads.map(p => BitrixService.createField(p.entityTypeId, p.field))
+        payloads.map(p => BitrixService.createField(p.typeId, p.field))
     );
 
     const successes = results.filter(r => r.status === 'fulfilled').length;
@@ -163,7 +162,7 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
 
     if (failures > 0) {
          const failedCrms = results
-            .map((r, index) => (r.status === 'rejected' ? crms.find(c=> c.id === payloads[index].entityTypeId.toString())?.title : null))
+            .map((r, index) => (r.status === 'rejected' ? crms.find(c => c.id === payloads[index].typeId)?.title : null))
             .filter(Boolean)
             .join(', ');
 
@@ -313,5 +312,3 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
     </Card>
   );
 }
-
-    
