@@ -271,21 +271,14 @@ export function FieldBuilder({ crms }: FieldBuilderProps) {
                 control={form.control}
                 name="isMultiple"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Múltiplo
-                      </FormLabel>
-                      <FormDescription>
-                        Permitir que este campo tenha múltiplos valores.
-                      </FormDescription>
-                    </div>
+                  <FormItem className="flex items-center gap-3">
                     <FormControl>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
+                    <FormLabel className="!mt-0 font-normal">Múltiplo</FormLabel>
                   </FormItem>
                 )}
               />

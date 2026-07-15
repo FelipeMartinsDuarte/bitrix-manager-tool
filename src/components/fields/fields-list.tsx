@@ -157,6 +157,7 @@ export function FieldsList({ crms }: FieldsListProps) {
         <CardTitle>Listar Campos de um CRM</CardTitle>
         <CardDescription>
           Selecione um CRM para ver e gerenciar seus campos personalizados.
+          {selectedCrm && !isLoading && !error ? ` (${fields.length} campos)` : null}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
